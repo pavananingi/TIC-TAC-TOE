@@ -6,8 +6,8 @@ on:
       - main
 
 jobs:
-  build:
-    name: Build and Deploy
+  build-analyze-scan:
+    name: Build and Analyze
     runs-on: ubuntu-latest
     steps:
       # Checkout the repository
@@ -30,13 +30,6 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-
-      # If you wish to fail your job when the Quality Gate is red, uncomment the
-      # following lines. This would typically be used to fail a deployment.
-      # - uses: sonarsource/sonarqube-quality-gate-action@master
-      #   timeout-minutes: 5
-      #   env:
-      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       # Install Trivy
       - name: Install Trivy
@@ -66,3 +59,19 @@ jobs:
           docker push pavan9505/tic-tac-toe:latest
         env:
           DOCKER_CLI_ACI: 1
+
+  deploy:
+    needs: build-analyze-scan
+    runs-on: self-hosted # Use your self-hosted runner label here
+    steps:
+      # Pull the Docker image
+      - name: Pull the Docker Image
+        run: docker pull pavan9505/tic-tac-toe:latest
+
+      # Trivy image scan
+      - name: Trivy Image Scan
+        run: trivy image pavan9505/tic-tac-toe:latest
+
+      # Run the container
+      - name: Run the Container
+        run: docker run -d --name ticgame -p 3000:3000 pavan9505/tic-tac-toe:latest
