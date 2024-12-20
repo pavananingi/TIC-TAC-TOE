@@ -1,4 +1,4 @@
-name: Build
+name: Build and Deploy
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Build
+    name: Build and Deploy
     runs-on: ubuntu-latest
     steps:
       # Checkout the repository
@@ -52,3 +52,17 @@ jobs:
       - name: Run Trivy Scan
         run: |
           trivy fs . > trivyfs.txt
+
+      # Docker build and push
+      - name: Docker Build and Push
+        run: |
+          # Build Docker image
+          docker build -t tic-tac-toe .
+          # Tag Docker image
+          docker tag tic-tac-toe pavan9505/tic-tac-toe:latest
+          # Login to Docker Hub
+          echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+          # Push Docker image
+          docker push pavan9505/tic-tac-toe:latest
+        env:
+          DOCKER_CLI_ACI: 1
